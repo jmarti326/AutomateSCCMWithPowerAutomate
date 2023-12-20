@@ -1,0 +1,2 @@
+CREATE SCHEMA automation
+GO
