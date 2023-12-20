@@ -4,7 +4,7 @@ GO
 CREATE TABLE automation.CustomProperties
 (
 	[ID] [bigint] IDENTITY(1,1) NOT FOR REPLICATION NOT NULL,
-	[CustomPropertyName] [int] NOT NULL,
+	[CustomPropertyName] VARCHAR(100) NOT NULL,
 	[ModifiedDate] [datetime] NOT NULL,
 	[IsEnabled] [bit] NOT NULL
  CONSTRAINT [DeviceExtensionData_PK] PRIMARY KEY CLUSTERED 
