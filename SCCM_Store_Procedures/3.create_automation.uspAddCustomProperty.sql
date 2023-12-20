@@ -1,17 +1,17 @@
-CREATE PROCEDURE automation.uspAddOrUpdateDeviceCustomProperty
-	@strPropertyName VARCHAR(50),
-	@strPropertyValue VARCHAR(50),
-	@strDeviceName VARCHAR(50)
+CREATE PROCEDURE automation.uspAddCustomProperty
+	@strPropertyName VARCHAR(50)
 AS
 BEGIN
 	DECLARE 
 		@TodaysDate DATETIME = GETDATE(),
 		@Editor VARCHAR(50) = 'INTERNAL\sccmlabadmin',
 		@PropertyName VARCHAR(50) = @strPropertyName,
-		@PropertyValue VARCHAR(50) = @strPropertyValue,
-		@DeviceName VARCHAR(50) = @strDeviceName,
-		@PropertyId INT = NULL,
-		@ResourceId INT = NULL;
+		@PropertyId INT = NULL;
+
+	DECLARE @DER_Result TABLE 
+	(
+		[PropertyId] [int]
+	)
 
 	BEGIN TRY
 		-- Look for the propertyId of the property name.
@@ -21,48 +21,36 @@ BEGIN
 			dbo.DeviceExtensionRegistration DER
 		WHERE
 			DER.PropertyName = @PropertyName
-
-		SELECT
-			@ResourceId = SMSRS.ItemKey
-		FROM
-			dbo.vSMS_R_SYSTEM SMSRS
-		WHERE
-			SMSRS.Name0 = @DeviceName
-
+		
 		BEGIN TRANSACTION;
 
 		IF (@PropertyId IS NULL)
-			INSERT INTO DeviceExtensionData 
-			(
-				ResourceId,
-				PropertyId,
-				Value,
-				CreatedBy,
-				CreatedDate,
-				ModifiedBy,
-				ModifiedDate
-
-			) values 
-			(
-				@ResourceId, 
-				@PropertyId, 
-				@PropertyValue, 
-				@Editor, 
-				@TodaysDate, 
-				@Editor, 
-				@TodaysDate
-			)
+				INSERT INTO DeviceExtensionRegistration 
+				(
+					PropertyName,
+					CreatedBy,
+					CreatedDate,
+					ModifiedBy,
+					ModifiedDate
+				)
+				OUTPUT inserted.PropertyId into @DER_Result
+				values 
+				(
+					@PropertyName,
+					@Editor, 
+					@TodaysDate, 
+					@Editor, 
+					@TodaysDate
+				)
 		ELSE
-			UPDATE DeviceExtensionData
-			SET
-				Value = @PropertyValue,
-				ModifiedBy = @Editor,
-				ModifiedDate = @TodaysDate
-			WHERE
-				ResourceId = @ResourceId
-				AND PropertyId = @PropertyId
-
+			SELECT @PropertyId AS PropertyId;
+		
 		COMMIT TRANSACTION;
+		
+		IF (@PropertyId IS NULL)
+			SELECT 
+				PropertyId 
+			FROM @DER_Result;
 	END TRY
 	BEGIN CATCH
 		-- report exception
